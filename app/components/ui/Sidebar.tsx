@@ -47,7 +47,7 @@ export default function Sidebar() {
 
     return (
         <aside
-            className={`relative flex flex-col h-full bg-background border-r border-border py-6 px-3 ${open ? "w-64" : "w-16"}`}
+            className={`relative flex flex-col h-full bg-background border-r border-border py-6 px-3 ${open ? "w-60" : "w-16"}`}
         >
             {/* Toggle Button */}
             <button
@@ -74,7 +74,7 @@ export default function Sidebar() {
                 {navItems.map(({ label, icon: Icon }) => (
                     <button
                         key={label}
-                        className={`flex items-center ${open ? "gap-3 px-4 w-full" : "px-0 w-12"} py-3 rounded-lg transition-colors text-left text-sm font-medium
+                        className={`flex items-center ${open ? "gap-3 px-4 w-full" : "px-1.5 w-12"} py-3 rounded-lg transition-colors text-left text-sm font-medium
               ${active === label ? "bg-accent text-accent-foreground" : "hover:bg-muted text-muted-foreground"}`}
                         onClick={() => setActive(label)}
                     >

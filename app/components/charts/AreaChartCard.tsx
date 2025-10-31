@@ -8,22 +8,28 @@ import {
     CardFooter,
     CardHeader,
     CardTitle,
-} from "./card";
+} from "../ui/card";
 import {
     ChartConfig,
     ChartContainer,
     ChartTooltip,
     ChartTooltipContent,
-} from "./chart";
+} from "../ui/chart";
+
+interface ChartDataPoint {
+    month: string;
+    [key: string]: string | number;
+}
 
 interface AreaChartCardProps {
-    data: any[];
+    data: ChartDataPoint[];
     config: ChartConfig;
     areaKey?: string;
     title?: string;
     description?: string;
     summary?: string;
     footerSubtext?: string;
+    showFooter?: boolean;
 }
 
 export default function AreaChartCard({
@@ -34,6 +40,7 @@ export default function AreaChartCard({
     description = "Showing total visitors for the last 6 months",
     summary = "Trending up by 5.2% this month",
     footerSubtext = "January - June 2024",
+    showFooter = true,
 }: AreaChartCardProps) {
     return (
         <Card>
@@ -70,18 +77,20 @@ export default function AreaChartCard({
                     </AreaChart>
                 </ChartContainer>
             </CardContent>
-            <CardFooter>
-                <div className="flex w-full items-start gap-2 text-sm">
-                    <div className="grid gap-2">
-                        <div className="flex items-center gap-2 font-medium leading-none">
-                            {summary} <TrendingUp className="h-4 w-4" />
-                        </div>
-                        <div className="flex items-center gap-2 leading-none text-muted-foreground">
-                            {footerSubtext}
+            {showFooter && (
+                <CardFooter>
+                    <div className="flex w-full items-start gap-2 text-sm">
+                        <div className="grid gap-2">
+                            <div className="flex items-center gap-2 font-medium leading-none">
+                                {summary} <TrendingUp className="h-4 w-4" />
+                            </div>
+                            <div className="flex items-center gap-2 leading-none text-muted-foreground">
+                                {footerSubtext}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </CardFooter>
+                </CardFooter>
+            )}
         </Card>
     );
 } 

@@ -8,21 +8,27 @@ import {
     CardFooter,
     CardHeader,
     CardTitle,
-} from "./card";
+} from "../ui/card";
 import {
     ChartConfig,
     ChartContainer,
     ChartTooltip,
     ChartTooltipContent,
-} from "./chart";
+} from "../ui/chart";
+
+interface ChartDataPoint {
+    month: string;
+    [key: string]: string | number;
+}
 
 interface BarChartCardProps {
-    data: any[];
+    data: ChartDataPoint[];
     config: ChartConfig;
     title?: string;
     description?: string;
     summary?: string;
     barKey?: string;
+    showFooter?: boolean;
 }
 
 export default function BarChartCard({
@@ -32,6 +38,7 @@ export default function BarChartCard({
     description = "January - June 2024",
     summary = "Trending up by 5.2% this month",
     barKey = "desktop",
+    showFooter = true,
 }: BarChartCardProps) {
     return (
         <Card>
@@ -58,14 +65,16 @@ export default function BarChartCard({
                     </BarChart>
                 </ChartContainer>
             </CardContent>
-            <CardFooter className="flex-col items-start gap-2 text-sm">
-                <div className="flex gap-2 font-medium leading-none">
-                    {summary} <TrendingUp className="h-4 w-4" />
-                </div>
-                <div className="leading-none text-muted-foreground">
-                    Showing total visitors for the last 6 months
-                </div>
-            </CardFooter>
+            {showFooter && (
+                <CardFooter className="flex-col items-start gap-2 text-sm">
+                    <div className="flex gap-2 font-medium leading-none">
+                        {summary} <TrendingUp className="h-4 w-4" />
+                    </div>
+                    <div className="leading-none text-muted-foreground">
+                        Showing total visitors for the last 6 months
+                    </div>
+                </CardFooter>
+            )}
         </Card>
     );
-} 
+}
