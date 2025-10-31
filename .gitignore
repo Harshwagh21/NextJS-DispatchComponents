@@ -4,16 +4,23 @@ Thumbs.db
 
 # Dependencies
 node_modules/
+app/node_modules/
+Backend/node_modules/
 .pnpm-store/
 
 # Build output
 .next/
+app/.next/
 .next/cache/
+app/.next/cache/
 out/
+app/out/
 dist/
 build/
 .swc/
+app/.swc/
 .turbo/
+app/.turbo/
 .parcel-cache/
 .cache/
 
