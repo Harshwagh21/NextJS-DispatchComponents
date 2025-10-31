@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongo";
+import { sanitizeInput } from "@/lib/api-utils";
 import Fleet from "@/models/Fleet";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-function sanitizeFleetName(name: string): string {
-  return name.trim().replace(/[<>]/g, '');
-}
+export const revalidate = 300;
 
 export async function GET(
   _req: Request,
@@ -17,12 +14,14 @@ export async function GET(
     await connectToDatabase();
     const { name } = await params;
     
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
+    if (!name?.trim()) {
       return NextResponse.json({ message: "Fleet name is required" }, { status: 400 });
     }
     
-    const sanitizedName = sanitizeFleetName(name);
-    const fleet = await Fleet.findOne({ name: sanitizedName });
+    const sanitizedName = sanitizeInput(name);
+    const fleet = await Fleet.findOne({ name: sanitizedName })
+      .select('charts location name _id')
+      .lean();
     
     if (!fleet) {
       return NextResponse.json({ message: "Fleet not found" }, { status: 404 });

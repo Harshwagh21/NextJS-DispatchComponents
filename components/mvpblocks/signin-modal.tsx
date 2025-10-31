@@ -27,12 +27,12 @@ export default function SigninModal() {
       const res = await fetch(`/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
+        credentials: "include",
       });
       const data = await res.json();
-      if (res.ok && data.token) {
-        localStorage.setItem("token", data.token);
-        window.location.reload();
+      if (res.ok && data.success) {
+        window.location.href = "/";
       } else {
         setError(data.message || "Login failed");
       }

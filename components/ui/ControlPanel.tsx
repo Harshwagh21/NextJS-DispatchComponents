@@ -36,15 +36,10 @@ export default function ControlPanel({ onCompareClick, isCompareOpen, fleet, set
     }, [dropdownOpen]);
 
     useEffect(() => {
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-        if (!token) {
-            setFleets([]);
-            return;
-        }
         setLoadingFleets(true);
         setError("");
         fetch(`/api/charts/fleets`, {
-            headers: { Authorization: `Bearer ${token}` }
+            credentials: 'include',
         })
             .then(res => {
                 if (!res.ok) {

@@ -71,10 +71,8 @@ export default function CompareSimulations({ fleet = "Zomato Fleet Pune", search
 
   // Fetch fleets from API
   useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (!token) return;
     fetch(`/api/charts/fleets`, {
-      headers: { Authorization: `Bearer ${token}` }
+      credentials: 'include',
     })
       .then(res => res.json())
       .then(data => {

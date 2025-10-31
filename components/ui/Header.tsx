@@ -50,14 +50,11 @@ function useTheme() {
 export default function Header({ activePage }: HeaderProps) {
     const isDark = useTheme();
     const router = useRouter();
-    const [loggedIn, setLoggedIn] = useState(
-        typeof window !== "undefined" && !!localStorage.getItem('token')
-    );
+    const [loggedIn, setLoggedIn] = useState(false);
     const [username, setUsername] = useState<string | null>(null);
 
     const toggleDark = () => {
         setTheme(!getCurrentTheme());
-        // Force update by dispatching a storage event (triggers useSyncExternalStore)
         window.dispatchEvent(new Event("storage"));
     };
 
@@ -66,31 +63,22 @@ export default function Header({ activePage }: HeaderProps) {
     }, [isDark]);
 
     useEffect(() => {
-        if (loggedIn) {
-            const token = localStorage.getItem('token');
-            if (token) {
-                // Decode token to get userId
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                const userId = payload.userId;
-                // Fetch user info
-                fetch(`/api/auth/user/${userId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data && data.username) setUsername(data.username);
-                    });
-            }
-        } else {
-            setUsername(null);
-        }
-    }, [loggedIn]);
+        fetch('/api/auth/me', { credentials: 'include' })
+            .then(res => res.json())
+            .then(data => {
+                setLoggedIn(data.loggedIn);
+                setUsername(data.user?.username || null);
+            })
+            .catch(() => {
+                setLoggedIn(false);
+                setUsername(null);
+            });
+    }, []);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         if (window.confirm("Do you want to log off?")) {
-            localStorage.removeItem('token');
-            setLoggedIn(false);
-            window.location.reload();
+            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+            window.location.href = '/';
         }
     };
 

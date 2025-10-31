@@ -5,17 +5,18 @@ import mongoose from "mongoose";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectToDatabase();
     const { id } = await params;
     
-    if (!id || typeof id !== "string" || !mongoose.Types.ObjectId.isValid(id)) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json({ message: "Invalid user ID" }, { status: 400 });
     }
     
-    const user = await User.findById(id);
+    const user = await User.findById(id).select('username email authority location fleet');
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
