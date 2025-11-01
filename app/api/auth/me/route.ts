@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongo";
-import { getAuthUser, getAuthToken } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth";
 import User from "@/models/User";
 
 export const runtime = "nodejs";
@@ -31,8 +31,7 @@ export async function GET() {
         fleet: user.fleet,
       },
     });
-  } catch (err: unknown) {
-    console.error("Error fetching user:", err);
+  } catch {
     return NextResponse.json({ loggedIn: false }, { status: 200 });
   }
 }

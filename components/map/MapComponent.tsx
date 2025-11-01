@@ -12,8 +12,7 @@ interface MapComponentProps {
 function MapFlyTo({ center }: { center: [number, number] }) {
     const map = useMap();
     useEffect(() => {
-        console.log('MapFlyTo called with center:', center);
-        if (center && Array.isArray(center)) {
+        if (Array.isArray(center) && center.length === 2) {
             map.flyTo(center, map.getZoom(), { duration: 1.2 });
         }
     }, [center, map]);

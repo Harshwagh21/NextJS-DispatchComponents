@@ -34,7 +34,6 @@ export async function GET(
       fleetId: fleet._id,
     });
   } catch (err: unknown) {
-    console.error("Error fetching fleet:", err);
     return NextResponse.json(
       { message: err instanceof Error ? err.message : "Failed to fetch fleet" },
       { status: 500 }

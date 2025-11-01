@@ -85,53 +85,43 @@ export default function CompareSimulations({ fleet = "Zomato Fleet Pune", search
           }
         }
       })
-      .catch(err => console.error("Error loading fleets:", err));
+      .catch(() => {});
   }, [fleet, selectedFleet2]);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    if (!dropdownOpen1 && !dropdownOpen2) return;
+    const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef1.current && !dropdownRef1.current.contains(event.target as Node)) {
         setDropdownOpen1(false);
       }
       if (dropdownRef2.current && !dropdownRef2.current.contains(event.target as Node)) {
         setDropdownOpen2(false);
       }
-    }
-    if (dropdownOpen1 || dropdownOpen2) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
     };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownOpen1, dropdownOpen2]);
 
-  // Fetch data for both fleets
   useEffect(() => {
-    async function fetchFleetData(fleetName: string, setter: (data: ChartData[]) => void) {
+    const fetchFleetData = async (fleetName: string): Promise<ChartData[]> => {
       try {
         const res = await fetch(`/api/charts/fleet/${encodeURIComponent(fleetName)}`);
-        if (!res.ok) {
-          setter([]);
-          return;
-        }
+        if (!res.ok) return [];
         const result = await res.json();
-        setter(Array.isArray(result.charts) ? result.charts : []);
+        return Array.isArray(result.charts) ? result.charts : [];
       } catch {
-        setter([]);
+        return [];
       }
-    }
+    };
     setLoading(true);
-    Promise.all([
-      fetchFleetData(selectedFleet1, setData1),
-      fetchFleetData(selectedFleet2, setData2)
-    ]).finally(() => setLoading(false));
+    Promise.all([fetchFleetData(selectedFleet1), fetchFleetData(selectedFleet2)])
+      .then(([d1, d2]) => { setData1(d1); setData2(d2); })
+      .finally(() => setLoading(false));
   }, [selectedFleet1, selectedFleet2]);
 
-  // Helper to get chart data by category
-  const getChart = (data: ChartData[], category: string): ChartData | undefined => data.find((c) => c.category === category);
+  const getChart = (data: ChartData[], category: string): ChartData | undefined => 
+    data.find((c) => c.category === category);
 
-  // Filter chartTypes by searchQuery
   const filteredChartTypes = !searchQuery
     ? chartTypes
     : chartTypes.filter(ct =>
@@ -139,63 +129,41 @@ export default function CompareSimulations({ fleet = "Zomato Fleet Pune", search
       ct.value.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-  function renderChart(chartCategory: string, data: ChartData[]) {
+  const transformChartData = (category: string, data: number[]) => {
+    const useLongMonths = ["Order Volume", "Average Delivery Time"].includes(category);
+    const months = useLongMonths ? monthsLong : monthsShort;
+    const base = data.map((value, i) => ({ month: months[i] || `M${i + 1}`, value }));
+    
+    if (category === "Order Volume") {
+      return base.map(({ month, value }) => ({ month, value, desktop: value, visitors: value }));
+    }
+    if (category === "Average Delivery Time") {
+      return base.map(({ month, value }) => ({ month, desktop: value, visitors: value }));
+    }
+    if (["Customer Satisfaction", "Driver Retention"].includes(category)) {
+      return base.map(({ month, value }) => ({ month, rate: value }));
+    }
+    return base.map(({ month, value }) => ({ month, value, sales: value }));
+  };
+
+  const renderChart = (chartCategory: string, data: ChartData[]) => {
     const chartMeta = chartTypes.find((ct) => ct.value === chartCategory);
     const chart = getChart(data, chartCategory);
-    if (!chart) return <div className="p-4">No data</div>;
-    let chartData: Array<{ month: string; [key: string]: string | number }> = [];
+    if (!chart || !chartMeta) return <div className="p-4">No data</div>;
+    
+    const chartData = transformChartData(chartCategory, chart.data);
     const summary = chart.summary || "";
-    if (chartCategory === "Revenue Growth" || chartCategory === "Fleet Utilization") {
-      chartData = chart.data.map((value: number, i: number) => ({ month: monthsShort[i] || `M${i + 1}`, value: value, sales: value }));
-    } else if (chartCategory === "Order Volume") {
-      chartData = chart.data.map((value: number, i: number) => ({ month: monthsLong[i] || `M${i + 1}`, value: value, desktop: value, visitors: value }));
-    } else if (chartCategory === "Average Delivery Time") {
-      chartData = chart.data.map((value: number, i: number) => ({ month: monthsLong[i] || `M${i + 1}`, desktop: value, visitors: value }));
-    } else if (chartCategory === "Customer Satisfaction" || chartCategory === "Driver Retention") {
-      chartData = chart.data.map((value: number, i: number) => ({ month: monthsShort[i] || `M${i + 1}`, rate: value }));
+    const commonProps = { title: chartCategory, summary };
+    
+    if (chartMeta.type === "bar") {
+      return <BarChartCard data={chartData} config={barConfig} barKey="value" description="Monthly values" {...commonProps} />;
     }
-    if (chartMeta?.type === "bar") {
-      return (
-        <BarChartCard
-          data={chartData}
-          config={barConfig}
-          barKey="value"
-          title={`${chartCategory}`}
-          description="Monthly values"
-          summary={summary}
-        />
-      );
+    if (chartMeta.type === "area") {
+      return <AreaChartCard data={chartData} config={areaConfig} areaKey="value" description="Performance over 7 months" footerSubtext="Jan - Jul 2024" {...commonProps} />;
     }
-    if (chartMeta?.type === "area") {
-      return (
-        <AreaChartCard
-          data={chartData}
-          config={areaConfig}
-          areaKey="value"
-          title={`${chartCategory}`}
-          description="Performance over 7 months"
-          summary={summary}
-          footerSubtext="Jan - Jul 2024"
-        />
-      );
-    }
-    if (chartMeta?.type === "line") {
-      let lineKey: string = "desktop";
-      if (chartCategory === "Average Delivery Time") lineKey = "desktop";
-      if (chartCategory === "Customer Satisfaction" || chartCategory === "Driver Retention") lineKey = "rate";
-      return (
-        <LineChartCard
-          data={chartData}
-          config={lineConfig}
-          lineKey={lineKey}
-          title={`${chartCategory}`}
-          description="Monthly values"
-          summary={summary}
-        />
-      );
-    }
-    return null;
-  }
+    const lineKey = ["Customer Satisfaction", "Driver Retention"].includes(chartCategory) ? "rate" : "desktop";
+    return <LineChartCard data={chartData} config={lineConfig} lineKey={lineKey} description="Monthly values" {...commonProps} />;
+  };
 
   // Fleet pill dropdown component
   interface FleetDropdownProps {
@@ -209,7 +177,8 @@ export default function CompareSimulations({ fleet = "Zomato Fleet Pune", search
     fleetsList: string[];
   }
   
-  function FleetDropdown({ label, selected, setSelected, dropdownOpen, setDropdownOpen, dropdownRef, excludeFleet, fleetsList }: FleetDropdownProps) {
+  const FleetDropdown = ({ label, selected, setSelected, dropdownOpen, setDropdownOpen, dropdownRef, excludeFleet, fleetsList }: FleetDropdownProps) => {
+    const availableFleets = fleetsList.filter(f => f !== excludeFleet);
     return (
       <div className="relative flex items-center gap-2 bg-muted rounded-full" ref={dropdownRef}>
         <div className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold select-none">
@@ -217,7 +186,7 @@ export default function CompareSimulations({ fleet = "Zomato Fleet Pune", search
         </div>
         <div
           className="flex items-center rounded-full bg-accent text-accent-foreground px-4 py-2 cursor-pointer gap-2 select-none min-w-[100px]"
-          onClick={() => setDropdownOpen((open: boolean) => !open)}
+          onClick={() => setDropdownOpen(prev => !prev)}
           tabIndex={0}
         >
           <span className="font-semibold">{selected}</span>
@@ -225,27 +194,24 @@ export default function CompareSimulations({ fleet = "Zomato Fleet Pune", search
         </div>
         {dropdownOpen && (
           <div className="absolute left-[110px] mt-2 w-64 bg-background border border-border rounded shadow z-10">
-            {fleetsList.length === 0 ? (
+            {availableFleets.length === 0 ? (
               <div className="px-4 py-2 text-sm text-muted-foreground">Loading fleets...</div>
             ) : (
-              fleetsList.filter((f: string) => f !== excludeFleet).map((f: string) => (
-              <div
-                key={f}
-                className={`px-4 py-2 cursor-pointer hover:bg-primary hover:text-primary-foreground whitespace-nowrap overflow-hidden text-ellipsis ${selected === f ? 'font-bold' : ''}`}
-                onClick={() => {
-                  setSelected(f);
-                  setDropdownOpen(false);
-                }}
-              >
-                {f}
-              </div>
+              availableFleets.map(f => (
+                <div
+                  key={f}
+                  className={`px-4 py-2 cursor-pointer hover:bg-primary hover:text-primary-foreground whitespace-nowrap overflow-hidden text-ellipsis ${selected === f ? 'font-bold' : ''}`}
+                  onClick={() => { setSelected(f); setDropdownOpen(false); }}
+                >
+                  {f}
+                </div>
               ))
             )}
           </div>
         )}
       </div>
     );
-  }
+  };
 
   return (
     <div className="flex flex-col gap-8 w-full">
@@ -288,27 +254,10 @@ export default function CompareSimulations({ fleet = "Zomato Fleet Pune", search
             </div>
           </div>
 
-          {/* Charts in 4 columns */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Left Fleet - Charts 1 and 2 */}
-            {filteredChartTypes.map((ct) => (
-              <div
-                key={ct.value + '-fleet1'}
-                className="w-full max-w-md mx-auto"
-                style={{ gridColumn: `span 1 / span 1` }}
-              >
-                {renderChart(ct.value, data1)}
-              </div>
-            ))}
-
-            {/* Right Fleet - Charts 3 and 4 */}
-            {filteredChartTypes.map((ct) => (
-              <div
-                key={ct.value + '-fleet2'}
-                className="w-full max-w-md mx-auto"
-                style={{ gridColumn: `span 1 / span 1` }}
-              >
-                {renderChart(ct.value, data2)}
+            {[...filteredChartTypes.map((ct) => ({ ...ct, fleet: 1 })), ...filteredChartTypes.map((ct) => ({ ...ct, fleet: 2 }))].map(({ value, fleet }) => (
+              <div key={`${value}-fleet${fleet}`} className="w-full max-w-md mx-auto">
+                {renderChart(value, fleet === 1 ? data1 : data2)}
               </div>
             ))}
           </div>

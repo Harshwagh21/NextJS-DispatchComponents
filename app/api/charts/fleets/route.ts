@@ -46,7 +46,6 @@ export async function GET() {
     
     return NextResponse.json(fleets);
   } catch (err: unknown) {
-    console.error("Error fetching fleets:", err);
     return NextResponse.json(
       { message: err instanceof Error ? err.message : "Failed to fetch fleets" },
       { status: 500 }

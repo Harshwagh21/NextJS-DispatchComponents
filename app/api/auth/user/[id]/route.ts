@@ -29,7 +29,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       fleet: user.fleet,
     });
   } catch (err: unknown) {
-    console.error("Error fetching user:", err);
     return NextResponse.json(
       { message: err instanceof Error ? err.message : "Failed to fetch user" },
       { status: 500 }

@@ -11,7 +11,7 @@ const getCache = (): MongooseCache => {
   return global._mongoose;
 };
 
-const uri = "mongodb+srv://mongodb:metrics-next%3ADB@metrics-next.ftr25yg.mongodb.net/metrics-db?retryWrites=true&w=majority&appName=Metrics-next";
+const uri = process.env.MONGODB_URI || "mongodb+srv://mongodb:metrics-next%3ADB@metrics-next.ftr25yg.mongodb.net/metrics-db?retryWrites=true&w=majority&appName=Metrics-next";
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
   const cached = getCache();

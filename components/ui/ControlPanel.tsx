@@ -19,20 +19,15 @@ export default function ControlPanel({ onCompareClick, isCompareOpen, fleet, set
     const [error, setError] = useState("");
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Close dropdown when clicking outside
     useEffect(() => {
-        if (typeof window === "undefined") return;
-        function handleClickOutside(event: MouseEvent) {
+        if (!dropdownOpen || typeof window === "undefined") return;
+        const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setDropdownOpen(false);
             }
-        }
-        if (dropdownOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
-        }
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
         };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [dropdownOpen]);
 
     useEffect(() => {
@@ -56,8 +51,7 @@ export default function ControlPanel({ onCompareClick, isCompareOpen, fleet, set
                 }
             })
             .catch((err) => {
-                console.error("Error loading fleets:", err);
-                setError(err.message || "Failed to load fleets");
+                setError(err instanceof Error ? err.message : "Failed to load fleets");
             })
             .finally(() => setLoadingFleets(false));
     }, [fleet, setFleet]);

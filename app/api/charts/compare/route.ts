@@ -48,7 +48,6 @@ export async function POST(req: Request) {
     
     return NextResponse.json(result);
   } catch (err: unknown) {
-    console.error("Error comparing charts:", err);
     return NextResponse.json(
       { message: err instanceof Error ? err.message : "Failed to compare charts" },
       { status: 500 }
