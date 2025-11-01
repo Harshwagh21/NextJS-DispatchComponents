@@ -6,6 +6,17 @@ import Fleet from "@/models/Fleet";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type ChartData = {
+  category: string;
+  data: number[];
+  summary?: string;
+};
+
+type LeanFleetWithCharts = {
+  charts: ChartData[];
+  _id: unknown;
+};
+
 export async function POST(req: Request) {
   try {
     await connectToDatabase();
@@ -28,15 +39,17 @@ export async function POST(req: Request) {
     }
     
     const sanitizedName = sanitizeInput(fleet);
-    const fleetDoc = await Fleet.findOne({ name: sanitizedName }).select('charts').lean();
+    const fleetDoc = await Fleet.findOne({ name: sanitizedName })
+      .select('charts')
+      .lean<LeanFleetWithCharts>();
     
-    if (!fleetDoc) {
+    if (!fleetDoc || !fleetDoc.charts) {
       return NextResponse.json({ message: "Fleet not found" }, { status: 404 });
     }
     
     const sanitizedCategories = categories.map((cat: string) => sanitizeInput(cat));
     const chartMap = new Map(
-      (fleetDoc.charts as Array<{ category: string; data: number[]; summary?: string }>).map(c => [c.category, c])
+      fleetDoc.charts.map(c => [c.category, c])
     );
     
     const result = sanitizedCategories

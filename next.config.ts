@@ -12,14 +12,6 @@ const nextConfig: NextConfig = {
   // Optional: set when deploying under a subpath like username.github.io/repo
   ...(basePath ? { basePath } : {}),
   ...(assetPrefix ? { assetPrefix } : {}),
-  turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
-  },
 };
 
 export default nextConfig;

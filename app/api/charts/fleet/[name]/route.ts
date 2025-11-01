@@ -6,6 +6,22 @@ import Fleet from "@/models/Fleet";
 export const runtime = "nodejs";
 export const revalidate = 300;
 
+type ChartData = {
+  category: string;
+  data: number[];
+  summary?: string;
+};
+
+type LeanFleet = {
+  charts: ChartData[];
+  location: {
+    lat: number;
+    lng: number;
+  };
+  name: string;
+  _id: unknown;
+};
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ name: string }> }
@@ -21,7 +37,7 @@ export async function GET(
     const sanitizedName = sanitizeInput(name);
     const fleet = await Fleet.findOne({ name: sanitizedName })
       .select('charts location name _id')
-      .lean();
+      .lean<LeanFleet>();
     
     if (!fleet) {
       return NextResponse.json({ message: "Fleet not found" }, { status: 404 });
